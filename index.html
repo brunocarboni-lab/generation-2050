@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Generation 2050: a simulation of three CRISPR futures, 2023 to 2050, with every number tagged by how much we can trust it.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Generation 2050</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: phone-first single column. Map first, three numbers, people, one world-specific card, one line of dispatch. World switch and time live in a bar fixed to the bottom. Tap, not hover. Single dark look that darkens with the outcome. */
+:root{
+  --bg:#0b0d10; --ink:#f2f1ec; --muted:#8e9298; --line:#23272d; --card:#13161b;
+  --w1:#c884ff; --w2:#8fa3bd; --w3:#49e3a6; --c:var(--w1);
+  --burden:#ff8a3d; --cured:#49e3a6; --edited:#c884ff; --cold:#4a5567;
+  --m:#49e3a6; --p:#5fb0ff; --a:#ffd166; --s:#ff6b9d; --o:#c9b6ff;
+  --serif:"Instrument Serif",Georgia,serif; --sans:"Geist",system-ui,sans-serif; --mono:"Geist Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(150px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:720px;margin:0 auto}
+header{display:flex;justify-content:space-between;align-items:baseline;padding:18px 0 10px}
+header h1{font-family:var(--serif);font-weight:400;font-size:26px;margin:0;letter-spacing:-.01em}
+header h1 i{color:var(--c)}
+.stamp{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.06em}
+.stage{position:relative;border-radius:14px;overflow:hidden;background:#0a0f17;border:1px solid var(--line)}
+canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.year{position:absolute;left:12px;top:8px;font-family:var(--serif);font-size:clamp(44px,14vw,72px);line-height:1;color:var(--c);letter-spacing:-.03em;pointer-events:none;font-variant-numeric:tabular-nums}
+.hint{position:absolute;right:12px;bottom:10px;font-family:var(--mono);font-size:10.5px;color:var(--muted);pointer-events:none;letter-spacing:.06em}
+.nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.num{background:var(--card);border-radius:12px;padding:10px 12px;border:1px solid transparent;cursor:pointer;min-width:0}
+.num:active,.num.on{border-color:var(--line)}
+.num b{display:block;font-family:var(--serif);font-size:clamp(22px,7vw,34px);line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.num span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.num.bad b{color:var(--burden)}.num.good b{color:var(--cured)}.num.edit b{color:var(--edited)}
+.tag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:3px;color:#0b0d10;vertical-align:1px}
+.tag.m{background:var(--m)}.tag.p{background:var(--p)}.tag.a{background:var(--a)}.tag.s{background:var(--s);color:#fff}.tag.o{background:var(--o)}
+.line{margin:14px 0 0;font-family:var(--serif);font-size:20px;line-height:1.3;letter-spacing:-.01em;min-height:2.6em}
+.line .tag{vertical-align:middle;margin-left:4px}
+.people{display:flex;gap:10px;margin-top:14px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.people::-webkit-scrollbar{display:none}
+.pp{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted);background:none;border:0;cursor:pointer;font-family:inherit}
+.pp .av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:20px;color:#0b0d10;border:2px solid transparent;transition:transform .15s}
+.pp[aria-pressed=true] .av{border-color:var(--ink);transform:scale(1.06)}
+.pp.gone .av{filter:grayscale(1) brightness(.5)}
+.card{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h3{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:500}
+.meter{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;padding:5px 0;border-top:1px solid var(--line)}
+.meter:first-of-type{border-top:0}
+.meter .bar{grid-column:1 / -1;height:4px;border-radius:2px;background:#1b1f26;overflow:hidden}
+.meter .bar i{display:block;height:100%;background:var(--c);transition:width .25s}
+.meter .v{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+/* treaty */
+.treaty{background:#f3efe4;color:#1a1a1a;border-radius:4px;padding:16px 16px 14px;font-family:var(--serif);position:relative;box-shadow:0 1px 0 #d9d2c0 inset,0 10px 30px -18px #000;margin-top:12px;cursor:pointer}
+.treaty .seal{position:absolute;right:14px;top:14px;width:46px;height:46px;border-radius:50%;border:1.5px solid #8a1c1c;color:#8a1c1c;display:grid;place-items:center;font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-align:center;transform:rotate(-12deg);opacity:.85}
+.treaty h4{margin:0;font-weight:400;font-size:20px;line-height:1.15;max-width:75%}
+.treaty .sub{font-family:var(--mono);font-size:10.5px;color:#6b6457;letter-spacing:.06em;margin-top:4px}
+.treaty ol{margin:10px 0 0;padding-left:0;list-style:none;font-size:14.5px;line-height:1.4;display:none}
+.treaty.open ol{display:block}
+.treaty li{padding:6px 0;border-top:1px dotted #c9c0a8;display:grid;grid-template-columns:auto 1fr;gap:10px}
+.treaty li em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:#6b6457;padding-top:3px}
+.treaty .sig{margin-top:10px;font-size:13px;color:#6b6457;display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.treaty .sig b{font-family:var(--serif);font-style:italic;font-weight:400;font-size:18px;color:#1a1a1a}
+.treaty .more{font-family:var(--mono);font-size:10.5px;color:#8a1c1c;letter-spacing:.06em;margin-top:8px}
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;background:#0b0d10f2;backdrop-filter:blur(10px);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.bar .in{max-width:720px;margin:0 auto}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--card);border-radius:10px;padding:4px}
+.seg button{font:inherit;font-size:12.5px;font-weight:500;color:var(--muted);background:transparent;border:0;border-radius:7px;padding:8px 4px;cursor:pointer}
+.seg button[aria-pressed=true]{background:#1e2229;color:var(--ink);box-shadow:inset 0 -2px 0 var(--sc)}
+.seg button:focus-visible,.play:focus-visible,.pp:focus-visible,.num:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.trow{display:flex;gap:10px;align-items:center;margin-top:8px}
+.play{width:40px;height:40px;border-radius:50%;border:0;background:var(--c);color:#0b0d10;font-size:14px;cursor:pointer;flex:0 0 auto}
+input[type=range]{flex:1;min-width:0;accent-color:var(--c);height:32px}
+.trow .y{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:4ch;text-align:right;font-variant-numeric:tabular-nums}
+/* sheet */
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#13161b;border-radius:16px 16px 0 0;border-top:1px solid var(--line);padding:14px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transform:translateY(105%);transition:transform .25s;z-index:30;max-height:70vh;overflow:auto}
+.sheet.open{transform:translateY(0)}
+.sheet .in{max-width:720px;margin:0 auto}
+.sheet h4{font-family:var(--serif);font-weight:400;font-size:24px;margin:0 0 6px}
+.sheet .r{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.sheet .r:first-of-type{border-top:0}
+.sheet .r b{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}
+.sheet .src{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:8px}
+.sheet .x{position:absolute;right:14px;top:10px;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer}
+.scrim{position:fixed;inset:0;background:#0006;opacity:0;pointer-events:none;transition:opacity .25s;z-index:25}
+.scrim.open{opacity:1;pointer-events:auto}
+details{margin-top:12px}
+summary{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;list-style:none}
+summary::-webkit-details-marker{display:none}
+.ledger .r{display:grid;grid-template-columns:auto 1fr;gap:8px;border-top:1px solid var(--line);padding:6px 0;font-size:12.5px}
+.ledger .v{font-family:var(--serif);font-size:16px;min-width:5ch;font-variant-numeric:tabular-nums}
+.ledger .src{display:block;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.ask{display:flex;gap:8px;margin-top:8px}
+.ask input{flex:1;min-width:0;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+.ask button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 14px;background:var(--c);color:#0b0d10;cursor:pointer}
+.out{margin-top:8px;white-space:pre-wrap;font-size:14px}
+.out.wait{color:var(--muted);font-style:italic}
+.foot{font-size:11.5px;color:var(--muted);margin-top:16px;line-height:1.5}
+@media (prefers-reduced-motion:reduce){.sheet,.scrim,.pp .av,.meter .bar i{transition:none}}
+/* desktop: two columns, controls docked under the map */
+@media (min-width:900px){
+  body{padding-block:0 40px}
+  .wrap{max-width:1180px;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:0 28px;align-items:start}
+  header{grid-column:1 / -1}
+  .left{position:sticky;top:12px}
+  .nums{margin-top:0}
+  .bar{position:static;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:10px;backdrop-filter:none}
+  .bar .in{max-width:none}
+  .sheet{left:auto;right:28px;bottom:28px;width:380px;border-radius:14px;border:1px solid var(--line)}
+  .line{font-size:22px}
+}
+</style>
+
+<div class="wrap" id="root">
+<header><h1>Generation <i>2050</i></h1><div class="stamp" id="stamp">SIMULATION · 2025</div></header>
+
+<div class="left">
+  <div class="stage" id="stage">
+    <canvas id="map" width="1000" height="520" aria-label="World map. Tap a country for its numbers."></canvas>
+    <div class="year" id="yr">2025</div>
+    <div class="hint">TAP A COUNTRY</div>
+  </div>
+  <div class="bar"><div class="in">
+    <div class="seg" role="group" aria-label="World">
+      <button data-w="none" style="--sc:var(--w1)" aria-pressed="true">No limits</button>
+      <button data-w="ban" style="--sc:var(--w2)" aria-pressed="false">Total ban</button>
+      <button data-w="law" style="--sc:var(--w3)" aria-pressed="false">Firm law</button>
+    </div>
+    <div class="trow"><button class="play" id="play" aria-label="Play">▶</button><input type="range" id="t" min="2023" max="2050" value="2025" step="1" aria-label="Year"><span class="y" id="ty">2025</span></div>
+  </div></div>
+</div>
+
+<div class="right">
+  <div class="nums" id="nums"></div>
+  <p class="line" id="line"></p>
+  <div class="people" id="people"></div>
+  <div id="extra"></div>
+  <details class="ledger"><summary>Evidence · every number behind the map</summary><div id="ledger" style="margin-top:8px"></div></details>
+  <details id="narr" hidden><summary>Ask the narrator</summary><div class="ask"><input id="q" type="text" placeholder="What is Amara's day like?" aria-label="Question"><button id="ask">Ask</button></div><div class="out" id="out"></div></details>
+  <p class="foot">A simulation, not a forecast. People are fictional; tagged numbers are not. <span class="tag m">measured</span> from published sources · <span class="tag p">projection</span> peer-reviewed · <span class="tag a">AI estimate</span> generated with frontier models (Claude) from the measured anchors and reviewed by the team · <span class="tag s">simulated</span> our model following those estimates · <span class="tag o">no data</span> nobody has measured it. The Accra Accord is fictional. Country shapes: Natural Earth.</p>
+</div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet"><button class="x" id="xs" aria-label="Close">×</button><div class="in" id="sheetin"></div></div>
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-geo/3.1.0/d3-geo.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson-client/3.1.0/topojson-client.min.js"></script>
+<script>
+let WORLD=[],SPHERE="";
+function runApp(){
+(function(){
+  const $=id=>document.getElementById(id);
+  const TAGN={m:"Measured",p:"Projection",a:"AI estimate",s:"Simulated",o:"No data"};
+  const T=k=>`<span class="tag ${k}">${TAGN[k]}</span>`;
+  const esc=s=>String(s).replace(/"/g,"&quot;");
+  const DATA=[
+    {v:"7.74M",tag:"m",l:"people living with sickle cell disease, 2021",src:"IHME / Lancet Haematology 2023"},
+    {v:"376,000",tag:"m",l:"deaths per year the disease contributed to, 2021",src:"IHME 2023"},
+    {v:"300k→400k",tag:"p",l:"born per year with the severe form, 2010→2050",src:"Piel et al. 2013"},
+    {v:"140,000",tag:"p",l:"of those in Nigeria by 2050",src:"Piel et al. 2013"},
+    {v:"$2.2M",tag:"m",l:"price of the first CRISPR therapy",src:"FDA / Vertex 2023"},
+    {v:"29 of 31",tag:"m",l:"trial patients crisis-free 12+ months",src:"FDA 2023"},
+    {v:"Chemo",tag:"m",l:"required before treatment; can cause infertility",src:"FDA 2023"},
+    {v:"$1.6–1.7M",tag:"m",l:"lifetime cost of the disease, US",src:"Johnson et al. 2022"},
+    {v:"70 / 106",tag:"m",l:"countries prohibit heritable editing",src:"Baylis et al. 2020"},
+    {v:"2018",tag:"m",l:"edited babies announced despite the rules; found out after",src:"MIT Tech Review 2019"},
+    {v:"−54%",tag:"m",l:"Down syndrome births in Europe, from screening",src:"de Graaf et al. 2021"},
+    {v:"99%",tag:"m",l:"of 284 people with Down syndrome: happy with their lives",src:"Skotko 2011"},
+    {v:"72% / 19%",tag:"m",l:"US adults OK editing a baby for disease / for intelligence",src:"Pew 2018"},
+    {v:"No data",tag:"o",l:"long-term effects of inherited edits",src:"—"}
+  ];
+  $("ledger").innerHTML=DATA.map(d=>`<div class="r"><div class="v">${d.v}</div><div>${T(d.tag)} ${d.l}<span class="src">${d.src}</span></div></div>`).join("");
+
+  const BURDEN={"566":[140000,"p"],"180":[45000,"p"],"356":[44000,"p"],"834":[12000,"a"],"800":[11000,"a"],"288":[9500,"a"],"024":[8500,"a"],"120":[7500,"a"],"562":[6500,"a"],"854":[6000,"a"],"466":[5500,"a"],"384":[5500,"a"],"729":[5000,"a"],"404":[5000,"a"],"508":[5000,"a"],"894":[4500,"a"],"686":[3500,"a"],"324":[3500,"a"],"204":[3000,"a"],"148":[3000,"a"],"231":[3000,"a"],"682":[3000,"a"],"076":[3500,"a"],"768":[2500,"a"],"694":[2500,"a"],"140":[2000,"a"],"178":[2000,"a"],"840":[2000,"a"],"586":[2000,"a"],"887":[1200,"a"],"332":[1000,"a"],"050":[1000,"a"],"266":[900,"a"],"646":[900,"a"],"108":[900,"a"],"430":[900,"a"],"454":[1500,"a"],"716":[1200,"a"],"624":[600,"a"],"226":[400,"a"],"818":[600,"a"],"368":[600,"a"],"792":[600,"a"],"512":[500,"a"],"250":[450,"a"],"826":[350,"a"],"388":[400,"a"],"380":[250,"a"],"300":[200,"a"],"144":[300,"a"],"784":[300,"a"],"414":[250,"a"],"048":[150,"a"],"634":[100,"a"],"276":[150,"a"],"056":[100,"a"],"528":[100,"a"],"724":[150,"a"],"620":[100,"a"],"124":[200,"a"],"862":[500,"a"],"170":[700,"a"],"218":[200,"a"],"604":[150,"a"],"780":[300,"a"],"214":[400,"a"],"192":[300,"a"],"328":[250,"a"],"740":[150,"a"]};
+  const BUR_TOTAL=Object.values(BURDEN).reduce((s,[n])=>s+n,0);
+  const HIGH=new Set(["840","124","826","250","276","380","724","528","056","752","578","208","246","392","410","036","554","682","784","634","414","376","300","620","040","756","372","048","512"]);
+  const UMID=new Set(["076","156","792","484","710","458","764","364","032","152","170","604","818","598","688","100","642","348","616","203","643","398","862","218"]);
+  const LOW=new Set(["180","800","562","854","466","148","140","508","454","729","231","694","324","768","204","887","332","004","108","646","430","624","706","728","434","226","716"]);
+  const tier=id=>HIGH.has(id)?"high":UMID.has(id)?"umid":LOW.has(id)?"low":"lmid";
+  const COV={none:{high:.70,umid:.20,lmid:.04,low:.01},law:{high:.92,umid:.76,lmid:.55,low:.40}};
+  const ENH={high:.42,umid:.16,lmid:.03,low:.005},UNDER={high:.015,umid:.01,lmid:.002,low:.0005};
+  const BIRTHS={high:11e6,umid:36e6,lmid:52e6,low:25e6};
+  const WC={none:"var(--w1)",ban:"var(--w2)",law:"var(--w3)"};
+  const WN={none:"No limits",ban:"Total ban",law:"Firm law"};
+  let world="none",year=2025,sel=null,person=null;
+  const ease=t=>t<=0?0:t>=1?1:t*t*(3-2*t);
+  const births=y=>300000+100000*(y-2010)/40;
+  const prog=y=>ease((y-2023)/27);
+  function cov(id,y){const tr=tier(id);if(world==="none")return COV.none[tr]*prog(y);if(world==="ban"){const e=(tr==="high"?.06:tr==="umid"?.01:0)*ease((y-2023)/4);return e*(1-ease((y-2027)/3))}return COV.law[tr]*ease((y-2028)/17)}
+  function enh(id,y){const tr=tier(id);if(world==="none")return ENH[tr]*ease((y-2034)/16);if(world==="ban")return UNDER[tr]*ease((y-2032)/18);return 0}
+  function price(y){if(world==="law")return 2.2-(2.2-0.15)*ease((y-2031)/19);if(world==="ban")return y<2027?2.2:NaN;return 2.2-1.1*prog(y)}
+  function totals(y){const b=births(y);let share=0;for(const [id,[n]] of Object.entries(BURDEN))share+=n*cov(id,y);let eb=0,tot=0;for(const [tr,n] of Object.entries(BIRTHS)){eb+=n*(world==="none"?ENH[tr]*ease((y-2034)/16):world==="ban"?UNDER[tr]*ease((y-2032)/18):0);tot+=n}return{b,cured:share*b/BUR_TOTAL,price:price(y),enh:eb/tot}}
+  function mood(y){if(world==="none")return .15+.85*ease((y-2030)/20);if(world==="ban")return .1+.6*ease((y-2027)/23);return Math.max(0,.25-.25*ease((y-2028)/17))}
+  const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+"M":n>=1000?Math.round(n/1000)+"k":Math.round(n);
+  const pr=t=>isNaN(t.price)?"Banned":t.price>=1?"$"+t.price.toFixed(1)+"M":"$"+Math.round(t.price*1000)+"k";
+
+  // map
+  const cv=$("map"),ctx=cv.getContext("2d");
+  const PATHS=WORLD.map(c=>({...c,p:new Path2D(c.d)}));const SPH=new Path2D(SPHERE);
+  const mix=(a,b,t)=>[0,1,2].map(i=>Math.round(a[i]+(b[i]-a[i])*t));
+  const C_LAND=[28,36,50],C_BURDEN=[255,138,61],C_CURED=[73,227,166],C_EDIT=[200,132,255],C_GREY=[90,96,104],C_COLD=[74,85,103];
+  function colorFor(c,y){const n=BURDEN[c.id]?BURDEN[c.id][0]:0;const k=Math.min(1,Math.log10(1+n)/5.2);const cv_=cov(c.id,y),en=enh(c.id,y);
+    let b=mix(C_LAND,C_BURDEN,k*.95);if(world==="ban")b=mix(b,C_COLD,.5*ease((y-2027)/10));b=mix(b,C_CURED,cv_*(.35+.65*k));
+    if(world==="none"&&en>0)b=mix(b,mix(C_EDIT,C_GREY,ease((y-2040)/10)),Math.min(1,en*2.2));if(world==="ban"&&en>0)b=mix(b,C_EDIT,Math.min(.6,en*25));return `rgb(${b})`}
+  let grain=null;function mkGrain(){const g=document.createElement("canvas");g.width=250;g.height=130;const gc=g.getContext("2d");const im=gc.createImageData(250,130);for(let i=0;i<im.data.length;i+=4){im.data[i]=im.data[i+1]=im.data[i+2]=Math.random()*255;im.data[i+3]=255}gc.putImageData(im,0,0);return g}
+  function draw(){const W=cv.width,H=cv.height,m=mood(year);ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=world==="law"?"#0a0f17":`rgb(${10+18*m},${15-4*m},${23-8*m})`;ctx.fill(SPH);
+    for(const c of PATHS){ctx.fillStyle=colorFor(c,year);ctx.fill(c.p);ctx.strokeStyle="#0a0f17";ctx.lineWidth=.6;ctx.stroke(c.p)}
+    for(const c of PATHS){const n=BURDEN[c.id]?BURDEN[c.id][0]:0;const cv_=cov(c.id,year);if(n>=5000&&cv_>.05){ctx.beginPath();ctx.arc(c.c[0],c.c[1],6+cv_*22,0,7);ctx.fillStyle=`rgba(73,227,166,${.08+cv_*.18})`;ctx.fill()}
+      const en=enh(c.id,year);const thr=world==="ban"?.001:.02;if(world!=="law"&&en>=thr){const g=world==="none"?ease((year-2040)/10):0;ctx.beginPath();ctx.arc(c.c[0],c.c[1],world==="ban"?4+en*600:4+en*40,0,7);ctx.fillStyle=`rgba(${200-110*g},${132-36*g},${255-151*g},${world==="ban"?.35:.1+en*.3})`;ctx.fill()}}
+    if(sel){ctx.strokeStyle="#fff";ctx.lineWidth=1.8;ctx.stroke(sel.p)}
+    if(m>.02){const vg=ctx.createRadialGradient(W/2,H/2,H*.25,W/2,H/2,W*.65);const col=world==="none"?"rgba(60,0,40,":"rgba(8,12,22,";vg.addColorStop(0,col+"0)");vg.addColorStop(1,col+(.85*m)+")");ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);if(!grain)grain=mkGrain();ctx.globalAlpha=.1*m;ctx.drawImage(grain,0,0,W,H);ctx.globalAlpha=1;if(world==="none"&&m>.5){ctx.fillStyle=`rgba(255,40,80,${(m-.5)*.12})`;ctx.fillRect(0,0,W,H)}}
+    document.body.style.background=world==="law"?"#0b0d10":world==="ban"?`rgb(${11+6*m},${13+4*m},${16+8*m})`:`rgb(${11+22*m},${13-6*m},${16+6*m})`;
+    const t=totals(year);$("yr").textContent=year;$("ty").textContent=year;$("stamp").textContent=`SIMULATION · ${WN[world].toUpperCase()} · ${year}`;
+    nums(t);line(t);people();extra(t)}
+
+  // tap country -> sheet
+  function pick(e){const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*cv.width/r.width,y=(e.clientY-r.top)*cv.height/r.height;let h=null;for(const c of PATHS){if(ctx.isPointInPath(c.p,x,y)){h=c;break}}sel=h;draw();if(h)countrySheet(h)}
+  cv.addEventListener("click",pick);
+  function countrySheet(h){const bur=BURDEN[h.id];const t=totals(year);const n=bur?Math.round(bur[0]*t.b/BUR_TOTAL):0;const c=cov(h.id,year),en=enh(h.id,year);
+    let rows=`<div class="r"><span>Born with severe sickle cell, ${year}</span><b>${n?n.toLocaleString():"<200"} ${T(bur?bur[1]:"a")}</b></div>`;
+    rows+=`<div class="r"><span>Reach a cure</span><b>${world==="ban"&&year>=2027?"0 · banned":Math.round(c*100)+"%"} ${T("a")}</b></div>`;
+    if(n)rows+=`<div class="r"><span>Not reached</span><b>${Math.round(n*(1-c)).toLocaleString()} ${T("s")}</b></div>`;
+    if(world==="none")rows+=`<div class="r"><span>Births edited for traits</span><b>${(en*100).toFixed(1)}% ${T("a")}</b></div>`+(en>.05?`<div class="r"><span>Inherited edit errors</span><b>No data ${T("o")}</b></div>`:"");
+    if(world==="ban"&&en>0)rows+=`<div class="r"><span>Edited offshore, no records</span><b>${(en*100).toFixed(2)}% ${T("s")}</b></div>`;
+    if(world==="law")rows+=`<div class="r"><span>Registered under the Accord</span><b>${year>=2028?"Yes":"Not yet"} ${T("a")}</b></div>`;
+    openSheet(`<h4>${h.n}</h4>${rows}<div class="src">income tier: ${tier(h.id)} · cure speed by tier is an AI estimate</div>`)}
+  function openSheet(html){$("sheetin").innerHTML=html;$("sheet").classList.add("open");$("scrim").classList.add("open")}
+  function closeSheet(){$("sheet").classList.remove("open");$("scrim").classList.remove("open");sel=null;draw()}
+  $("xs").onclick=closeSheet;$("scrim").onclick=closeSheet;
+
+  // numbers (tap for source)
+  function nums(t){const N=[["bad","p",fmt(t.b),"born this year","Piel et al. 2013: ≈300k (2010) → ≈400k (2050), severe form, interpolated."],
+    ["good","a",fmt(t.cured),"reach a cure","Cure coverage by income tier is an AI estimate: generated with a frontier model (Claude) from the measured anchors, then reviewed by the team. Not a forecast. Trial: 29 of 31 crisis-free (FDA 2023)."],
+    world==="none"?["edit","a",(t.enh*100).toFixed(1)+"%","births edited for traits","AI estimate: 42% of births in rich countries by 2050 if trait editing is legal and sold. Generated with a frontier model from the 2018 Pew split (72% approve for disease, 19% for intelligence) and screening uptake data. Not a forecast."]:
+    world==="ban"?["edit","s",(t.enh*100).toFixed(2)+"%","edited offshore, no records","Simulated. Anchor: 2018 edited-babies case, discovered after the fact."]:
+    ["","a",pr(t),"per treatment","Starts at the measured $2.2M (FDA 2023). The fall follows the Accord's Access Fund: pooled purchase by health ministries, paid per cured year. The curve is an AI estimate, not a forecast."]];
+    $("nums").innerHTML=N.map((n,i)=>`<button class="num ${n[0]}" data-tip="${esc(n[4])}" aria-label="${n[3]}">${T(n[1])}<b>${n[2]}</b><span>${n[3]}</span></button>`).join("");
+    $("nums").querySelectorAll(".num").forEach(b=>b.onclick=()=>openSheet(`<h4>${b.querySelector("b").textContent} <span style="font-size:14px;color:var(--muted)">${b.querySelector("span").textContent}</span></h4><p style="margin:6px 0 0;font-size:14px">${b.dataset.tip}</p>`))}
+
+  // one line
+  function line(t){const ph=year<2032?0:year<2043?1:2;const L={
+    none:[`The cure exists. It goes where the money is. ${T("m")}`,`Clinics now sell height, memory, skin tone. Nobody knows what the edits do in a generation. ${T("o")}`,`The purple has gone grey. The same traits sold best. ${T("s")}`],
+    ban:[`Fear won. In 2027 everything is banned, the cure included. ${T("a")}`,`Demand moved offshore. No records, no follow-up. ${T("s")}`,`A cure 23 years old, illegal 23 years. ${year-2027} years without new safety data. ${T("s")}`],
+    law:[`Same cure. The difference is a signature in 2028, and a gate every edit passes through. ${T("a")}`,`The Fund buys at volume. Centres open where the disease is. Every edit on the Register. ${T("a")}`,`${Math.round(100*t.cured/t.b)}% of children born with the disease reach a cure. Nobody edited off the record. ${T("s")}`]};
+    $("line").innerHTML=L[world][ph]}
+
+  // people (tap one)
+  const PEOPLE={
+    none:[{n:"Amara",c:"#ff8a3d",w:"Lagos. Never reached. The market did not come."},{n:"Sofía",c:"#ffd166",w:"Down syndrome. Fewer like her each year. Her group closes in 2046.",gone:2046},{n:"Leo",c:"#c884ff",w:"Edited as an embryo. Says he is simply himself."},{n:"Mateo",c:"#5a6068",w:"Leo's unedited brother. Passed over. Says their parents chose Leo like a car."}],
+    ban:[{n:"Amara",c:"#ff8a3d",w:"Lagos. The cure is illegal everywhere. Nobody comes."},{n:"Daniel",c:"#4a5567",w:"Toronto. On the list in 2027 when the ban passed. Still has crises at 25."},{n:"Volkov twins",c:"#c884ff",w:"Edited in an unlicensed clinic abroad, 2036. No records. No one to call."}],
+    law:[{n:"Amara",c:"#49e3a6",w:"Lagos. Treated at 11, Accord-funded centre.",cured:2036},{n:"Daniel",c:"#49e3a6",w:"Toronto. Treated at 9. Fertility preserved first; the law requires it.",cured:2034},{n:"Sofía",c:"#ffd166",w:"Down syndrome. Sits on the review board that draws the line."},{n:"Judge Mensah",c:"#5fb0ff",w:"Keeps the register. An unregistered edit is a crime, not a grey area."}]};
+  function people(){const list=PEOPLE[world];if(person===null||person>=list.length)person=0;const age=year-2025;
+    $("people").innerHTML=list.map((p,i)=>`<button class="pp ${p.gone&&year>=p.gone?"gone":""}" aria-pressed="${i===person}" data-i="${i}"><span class="av" style="background:${p.c}">${p.n[0]}</span>${p.n}</button>`).join("");
+    $("people").querySelectorAll(".pp").forEach(b=>b.onclick=()=>{person=+b.dataset.i;people()});
+    const p=list[person];const a=/Judge|twins/.test(p.n)?"":age<0?"not yet born · ":age===0?"born this year · ":"age "+age+" · ";
+    const st=p.cured?(year>=p.cured?"cured":"waiting"):p.gone&&year>=p.gone?"group closed":"";
+    let el=$("pline");if(!el){el=document.createElement("p");el.id="pline";el.style.cssText="margin:6px 0 0;font-size:14px;color:var(--muted)";$("people").after(el)}
+    el.innerHTML=`<b style="color:var(--ink)">${p.n}</b> · ${a}${p.w} ${st?`<span class="tag s">${st}</span>`:""}`}
+
+  // world card
+  function extra(t){const e1=ease((year-2034)/16),e2=ease((year-2027)/23);let h="";
+    if(world==="none"){const idx=Math.round(100-42*e1);h=`<div class="card"><h3>Edited away ${T("s")}</h3>${meter("Human variation",idx+"/100",idx)}${meter("Down syndrome births","−"+Math.round(54+30*e1)+"%",54+30*e1)}${meter("Deaf births","−"+Math.round(45*e1)+"%",45*e1)}${meter("Short stature","−"+Math.round(70*e1)+"%",70*e1)}${meter("Skin-tone range","−"+Math.round(38*e1)+"%",38*e1)}<div class="meter"><span>Inherited edit errors</span><span class="v" style="color:var(--o)">no data</span></div></div>`}
+    else if(world==="ban"){const could=Object.entries(BURDEN).reduce((s,[id,[n]])=>s+n*COV.law[tier(id)],0)*(t.b/BUR_TOTAL)*Math.max(0,year-2030)*.6;h=`<div class="card"><h3>What the ban costs ${T("s")}</h3>${meter("Could have been cured since 2030",fmt(could),Math.min(100,could/2e6*100))}${meter("Years without new safety data",Math.max(0,year-2027),Math.max(0,year-2027)/23*100)}${meter("Edited offshore, unwatched",(t.enh*100).toFixed(2)+"%",t.enh*100*40)}<div class="meter"><span>Deaths/yr the disease contributes to</span><span class="v">376,000 ${T("m")}</span></div></div>`}
+    else{const signed=year>=2028;h=`<div class="treaty ${signed?"":"pending"}" id="treaty"><div class="seal">${signed?"IN<br>FORCE<br>2028":"DRAFT"}</div><h4>The Accra Accord on Human Genome Editing</h4><div class="sub">${signed?"Signed Accra, 14 March 2028 · "+Math.min(106,70+Math.round(36*ease((year-2028)/8)))+" parties":"Negotiations open 2026 · not yet in force"} · FICTIONAL</div>
+      <ol>
+        <li><em>Art. 1</em>Editing a living patient's own cells to treat a diagnosed serious disease is lawful. No party may ban it.</li>
+        <li><em>Art. 2</em>Editing embryos, eggs or sperm for transfer to a person is prohibited. Dish research is permitted and registered.</li>
+        <li><em>Art. 3</em>The Register. Every human edit passes a Consent Gate before it happens: cleared, held for a board, or blocked. No gate record, no edit. An unregistered edit is a crime in all parties.</li>
+        <li><em>Art. 4</em>Enforcement by reward. Journals, preprint servers and funders of the parties accept human editing work only with a Register ID.</li>
+        <li><em>Art. 5</em>The Access Fund. Health ministries buy as one pool and pay per patient-year cured, not up front. Price falls as patients rise. Hosts build centres where the disease is.</li>
+        <li><em>Art. 6</em>No edit may be sold or advertised for a non-disease trait.</li>
+        <li><em>Art. 7</em>Where a condition is part of a community's identity, that community holds seats on the board that decides.</li>
+        <li><em>Art. 8</em>Fertility preservation is offered before any conditioning treatment. Ancestry coverage of trial data is published with every approval.</li>
+      </ol>
+      <div class="sig"><span>For the parties,<br><b>A. Mensah</b></span><span class="more" id="tmore">${signed?"TAP TO READ":"TAP TO READ DRAFT"}</span></div></div>`}
+    $("extra").innerHTML=h;const tr=$("treaty");if(tr){const open=sessionStorage.getItem("treaty")==="1";if(open)tr.classList.add("open");tr.onclick=()=>{tr.classList.toggle("open");try{sessionStorage.setItem("treaty",tr.classList.contains("open")?"1":"0")}catch(e){}}}}
+  function meter(l,v,pct){return `<div class="meter"><span>${l}</span><span class="v">${v}</span><div class="bar"><i style="width:${Math.max(0,Math.min(100,pct))}%"></i></div></div>`}
+
+  // controls
+  const slider=$("t");slider.addEventListener("input",()=>{year=+slider.value;draw()});
+  let timer=null;$("play").onclick=()=>{if(timer){clearInterval(timer);timer=null;$("play").textContent="▶";return}if(year>=2050)year=2023;$("play").textContent="❚❚";timer=setInterval(()=>{year++;slider.value=year;draw();if(year>=2050){clearInterval(timer);timer=null;$("play").textContent="↻"}},380)};
+  document.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{world=b.dataset.w;person=0;document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));document.documentElement.style.setProperty("--c",WC[world]);draw()});
+  draw();
+
+  // narrator
+  let sampleFn=null;
+  function prompt(q){const t=totals(year);return `You narrate Generation 2050, a simulation about CRISPR policy. World: ${WN[world]}. Year: ${year}. Readouts: ${fmt(t.b)} born with severe sickle cell [PROJECTION]; ${fmt(t.cured)} reach a cure [AI ESTIMATE]; price ${pr(t)} [AI ESTIMATE].${world==="law"?" The fictional Accra Accord (2028) applies: therapy lawful; heritable editing banned; every edit passes a Consent Gate into a Register; journals and funders accept only registered work; a pooled Access Fund pays per cured year; no trait sales; community seats on boards; fertility preservation and ancestry data required.":""}
+People (fictional): ${PEOPLE[world].map(p=>p.n+": "+p.w).join(" | ")}
+LEDGER (only real numbers allowed):
+${DATA.map(d=>`[${TAGN[d.tag].toUpperCase()}] ${d.v} — ${d.l} (${d.src})`).join("\n")}
+RULES: no statistic outside the ledger or readouts (say "no data" instead); tag every figure in brackets; one gain and one loss; disagreements as disagreement between characters; respect for disability, never "defect"; under 110 words, plain prose.
+Question: ${q}`}
+  (async()=>{try{sampleFn=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){}if(!sampleFn)return;const n=$("narr");n.hidden=false;const out=$("out");
+    $("ask").onclick=async()=>{const q=$("q").value.trim()||"What is today like for them?";out.className="out wait";out.textContent="Thinking…";try{const r=await sampleFn(prompt(q),{cache:false,onText:({text})=>{out.className="out";out.textContent=text}});out.textContent=r.text}catch(e){out.className="out";if(["not_granted","sampling_disabled","not_declared"].includes(e.code))n.hidden=true;else out.textContent=e.text||"The narrator could not answer. Try again."}}})();
+})();
+}
+fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json").then(r=>r.json()).then(topo=>{
+  const fc=topojson.feature(topo,topo.objects.countries);
+  const proj=d3.geoNaturalEarth1().fitSize([1000,520],{type:"Sphere"});
+  const path=d3.geoPath(proj).digits(1);
+  WORLD=fc.features.filter(f=>f.properties.name!=="Antarctica").map(f=>{const c=path.centroid(f);return{id:f.id,n:f.properties.name,d:path(f),c:[Math.round(c[0]),Math.round(c[1])]}});
+  SPHERE=path({type:"Sphere"});
+  runApp();
+}).catch(e=>{document.getElementById("line").textContent="Map data could not be loaded. Check your connection and reload.";});
+</script>
+</body>
+</html>
